@@ -27,9 +27,27 @@ function getCurrentBranch() {
     }
 }
 
-function getGitLogs() {
+function getBaseBranch() {
     try {
-        const logOutput = execSync('git log --format="%h|%ad|%s|%b___COMMIT_SEP___" --date=format:"%Y-%m-%d %H:%M:%S"', { encoding: 'utf8' });
+        const branches = execSync('git branch').toString();
+        if (branches.includes('main')) return 'main';
+        if (branches.includes('master')) return 'master';
+        return '';
+    } catch (e) {
+        return '';
+    }
+}
+
+function getGitLogs(currentBranch) {
+    try {
+        const baseBranch = getBaseBranch();
+        let logCommand = 'git log --format="%h|%ad|%s|%b___COMMIT_SEP___" --date=format:"%Y-%m-%d %H:%M:%S"';
+        
+        if (baseBranch && currentBranch !== baseBranch) {
+            logCommand += ` ${baseBranch}..${currentBranch}`;
+        }
+
+        const logOutput = execSync(logCommand, { encoding: 'utf8' });
         return logOutput.split('___COMMIT_SEP___\n').map(block => block.trim()).filter(Boolean);
     } catch (e) {
         return [];
@@ -148,7 +166,7 @@ function main() {
         headerContent += `${DELIMITER}\n`;
     }
 
-    const logs = getGitLogs();
+    const logs = getGitLogs(branchName);
     const markdownLogs = generateMarkdownLog(logs);
 
     const finalContent = headerContent + (markdownLogs ? '\n' : '') + markdownLogs + '\n';
