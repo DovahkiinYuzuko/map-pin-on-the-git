@@ -1,4 +1,4 @@
-# Map-Pin-On-The-Git
+# Map Pin On The Git
 
 GitのコミットログをSSOT（信頼できる唯一の情報源）としてドキュメントを自動生成し、思考プロセスを管理するAIエージェント用スキルです。/ An AI agent skill to automatically generate documentation from Git commit logs as the Single Source of Truth (SSOT) and manage the architectural thinking process.
 
