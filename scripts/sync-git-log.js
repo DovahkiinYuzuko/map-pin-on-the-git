@@ -89,7 +89,10 @@ function generateMarkdownLog(logBlocks) {
         // NUL文字で分割。`|` による indexOf チェーンを廃止。
         const parts = block.split('\0');
         if (parts.length < LOG_FIELDS.length) continue;
-        const [hash, date, subject, body] = parts.map(p => p.trim());
+        const hash    = parts[0].trim();
+        const date    = parts[1].trim();
+        const subject = parts[2].trim();
+        const body    = parts[3] ?? '';
         const parsedBody = parseCommitBody(body);
         md += `### \`${hash}\`\n`;
         md += `- **Date:** ${date}\n`;
