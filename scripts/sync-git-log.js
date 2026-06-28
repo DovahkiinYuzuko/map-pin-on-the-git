@@ -6,7 +6,10 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+
 const DELIMITER = '--- START GIT LOG ---';
+const LOG_FIELDS = ['hash', 'date', 'subject', 'body'];
+
 function isGitRepository() {
     try {
         execSync('git rev-parse --is-inside-work-tree', { stdio: 'ignore' });
@@ -15,6 +18,7 @@ function isGitRepository() {
         return false;
     }
 }
+
 function getAllBranches() {
     try {
         const output = execSync('git branch --format="%(refname:short)"').toString();
@@ -23,20 +27,9 @@ function getAllBranches() {
         return [];
     }
 }
-function getBaseBranch() {
+
+function getGitLogs(currentBranch, baseBranch) {
     try {
-        const output = execSync('git branch --format="%(refname:short)"').toString();
-        const branches = output.split('\n').map(b => b.trim()).filter(Boolean);
-        if (branches.includes('main')) return 'main';
-        if (branches.includes('master')) return 'master';
-        return '';
-    } catch (e) {
-        return '';
-    }
-}
-function getGitLogs(currentBranch) {
-    try {
-        const baseBranch = getBaseBranch();
         // フィールド区切りに NUL文字(%x00) を使用。
         // NUL はコミットメッセージに含まれ得ない唯一の文字なので衝突が原理的に起きない。
         let logCommand = `git log --format="%h%x00%ad%x00%s%x00%b%x00___COMMIT_SEP___" --date=format:"%Y-%m-%d %H:%M:%S"`;
@@ -52,6 +45,7 @@ function getGitLogs(currentBranch) {
         return [];
     }
 }
+
 function parseCommitBody(bodyText) {
     const fields = {
         description: '',
@@ -87,17 +81,15 @@ function parseCommitBody(bodyText) {
     }
     return fields;
 }
+
 function generateMarkdownLog(logBlocks) {
     let md = '';
     for (const block of logBlocks) {
         if (!block) continue;
         // NUL文字で分割。`|` による indexOf チェーンを廃止。
         const parts = block.split('\0');
-        if (parts.length < 3) continue;
-        const hash    = parts[0].trim();
-        const date    = parts[1].trim();
-        const subject = parts[2].trim();
-        const body    = parts[3] ? parts[3].trim() : '';
+        if (parts.length < LOG_FIELDS.length) continue;
+        const [hash, date, subject, body] = parts.map(p => p.trim());
         const parsedBody = parseCommitBody(body);
         md += `### \`${hash}\`\n`;
         md += `- **Date:** ${date}\n`;
@@ -118,6 +110,7 @@ function generateMarkdownLog(logBlocks) {
     }
     return md.trim();
 }
+
 function main() {
     if (!isGitRepository()) {
         console.error('Error: Current directory is not a Git repository.');
@@ -128,6 +121,10 @@ function main() {
         console.error('Error: No branches found.');
         process.exit(1);
     }
+    // getBaseBranch()を廃止。getAllBranches()の結果を再利用することで git branch の呼び出しを1回に削減。
+    const baseBranch = branches.includes('main') ? 'main'
+                     : branches.includes('master') ? 'master'
+                     : '';
     const outputDir = process.argv[2] || 'docs/git-descriptions';
     const dirPath = path.resolve(outputDir);
     console.log(`Found ${branches.length} branches. Starting synchronization...`);
@@ -152,7 +149,7 @@ function main() {
         if (!headerContent.includes(DELIMITER)) {
             headerContent += `${DELIMITER}\n`;
         }
-        const logs = getGitLogs(branchName);
+        const logs = getGitLogs(branchName, baseBranch);
         const markdownLogs = generateMarkdownLog(logs);
         const finalContent = headerContent + (markdownLogs ? '\n' : '') + markdownLogs + '\n';
         fs.writeFileSync(filePath, finalContent, 'utf8');
@@ -160,4 +157,5 @@ function main() {
     }
     console.log('All branches synchronized successfully.');
 }
+
 main();
