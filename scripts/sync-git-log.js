@@ -30,7 +30,8 @@ function getAllBranches() {
 
 function getBaseBranch() {
     try {
-        const branches = execSync('git branch').toString();
+        const output = execSync('git branch --format="%(refname:short)"').toString();
+        const branches = output.split('\n').map(b => b.trim()).filter(Boolean);
         if (branches.includes('main')) return 'main';
         if (branches.includes('master')) return 'master';
         return '';
@@ -151,14 +152,16 @@ function main() {
     const outputDir = process.argv[2] || 'docs/git-descriptions';
     const dirPath = path.resolve(outputDir);
 
-    if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
-    }
-
     console.log(`Found ${branches.length} branches. Starting synchronization...`);
 
     for (const branchName of branches) {
         const filePath = path.join(dirPath, `${branchName}.md`);
+        const fileDir = path.dirname(filePath);
+
+        if (!fs.existsSync(fileDir)) {
+            fs.mkdirSync(fileDir, { recursive: true });
+        }
+
         let headerContent = '';
 
         if (fs.existsSync(filePath)) {
