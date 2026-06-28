@@ -1,7 +1,7 @@
 /**
- * Git Log to Markdown Synchronizer
- * Usage: node scripts/sync-git-log.js [target-file-path]
- * Default file: docs/git-descriptions/[branch-name].md
+ * Git Log to Markdown Synchronizer (All Branches)
+ * Usage: node scripts/sync-git-log.js [output-directory]
+ * Default directory: docs/git-descriptions/
  */
 
 const { execSync } = require('child_process');
@@ -19,11 +19,12 @@ function isGitRepository() {
     }
 }
 
-function getCurrentBranch() {
+function getAllBranches() {
     try {
-        return execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
+        const output = execSync('git branch --format="%(refname:short)"').toString();
+        return output.split('\n').map(b => b.trim()).filter(Boolean);
     } catch (e) {
-        return 'unknown-branch';
+        return [];
     }
 }
 
@@ -41,10 +42,12 @@ function getBaseBranch() {
 function getGitLogs(currentBranch) {
     try {
         const baseBranch = getBaseBranch();
-        let logCommand = 'git log --format="%h|%ad|%s|%b___COMMIT_SEP___" --date=format:"%Y-%m-%d %H:%M:%S"';
+        let logCommand = `git log --format="%h|%ad|%s|%b___COMMIT_SEP___" --date=format:"%Y-%m-%d %H:%M:%S"`;
         
         if (baseBranch && currentBranch !== baseBranch) {
             logCommand += ` ${baseBranch}..${currentBranch}`;
+        } else {
+            logCommand += ` ${currentBranch}`;
         }
 
         const logOutput = execSync(logCommand, { encoding: 'utf8' });
@@ -139,40 +142,51 @@ function main() {
         process.exit(1);
     }
 
-    const branchName = getCurrentBranch();
-    const targetPath = process.argv[2] || `docs/git-descriptions/${branchName}.md`;
-    const filePath = path.resolve(targetPath);
+    const branches = getAllBranches();
+    if (branches.length === 0) {
+        console.error('Error: No branches found.');
+        process.exit(1);
+    }
 
-    const dirPath = path.dirname(filePath);
+    const outputDir = process.argv[2] || 'docs/git-descriptions';
+    const dirPath = path.resolve(outputDir);
+
     if (!fs.existsSync(dirPath)) {
         fs.mkdirSync(dirPath, { recursive: true });
     }
 
-    let headerContent = '';
+    console.log(`Found ${branches.length} branches. Starting synchronization...`);
 
-    if (fs.existsSync(filePath)) {
-        const currentContent = fs.readFileSync(filePath, 'utf8');
-        const delimiterIndex = currentContent.indexOf(DELIMITER);
-        if (delimiterIndex !== -1) {
-            headerContent = currentContent.substring(0, delimiterIndex).trim() + '\n';
+    for (const branchName of branches) {
+        const filePath = path.join(dirPath, `${branchName}.md`);
+        let headerContent = '';
+
+        if (fs.existsSync(filePath)) {
+            const currentContent = fs.readFileSync(filePath, 'utf8');
+            const delimiterIndex = currentContent.indexOf(DELIMITER);
+            if (delimiterIndex !== -1) {
+                headerContent = currentContent.substring(0, delimiterIndex).trim() + '\n';
+            } else {
+                headerContent = currentContent.trim() + '\n\n';
+            }
         } else {
-            headerContent = currentContent.trim() + '\n\n';
+            headerContent = `# ${branchName}\n## Overview\nDescribe the purpose of this branch here.\n\n`;
         }
-    } else {
-        headerContent = `# ${branchName}\n## Overview\nDescribe the purpose of this branch here.\n\n`;
+
+        if (!headerContent.includes(DELIMITER)) {
+            headerContent += `${DELIMITER}\n`;
+        }
+
+        const logs = getGitLogs(branchName);
+        const markdownLogs = generateMarkdownLog(logs);
+
+        const finalContent = headerContent + (markdownLogs ? '\n' : '') + markdownLogs + '\n';
+        fs.writeFileSync(filePath, finalContent, 'utf8');
+
+        console.log(`Sync complete for branch: ${branchName}`);
     }
 
-    if (!headerContent.includes(DELIMITER)) {
-        headerContent += `${DELIMITER}\n`;
-    }
-
-    const logs = getGitLogs(branchName);
-    const markdownLogs = generateMarkdownLog(logs);
-
-    const finalContent = headerContent + (markdownLogs ? '\n' : '') + markdownLogs + '\n';
-    fs.writeFileSync(filePath, finalContent, 'utf8');
-
-    console.log(`Sync complete: Synchronized ${targetPath} with the latest Git log.`);
+    console.log('All branches synchronized successfully.');
 }
 
 main();

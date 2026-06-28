@@ -10,7 +10,7 @@ It treats the Git commit history as the "Single Source of Truth." Commits that d
 - Dependencies: Uses only Node.js standard modules (`child_process`, `fs`, `path`). No additional package installation is required.
 
 ## 3. File Structure and Format Specification
-The file header (branch name and overview) retains the content manually defined by human developers or AI agents. The script exclusively overwrites the commit history section located after a specific delimiter.
+The file header (branch name and overview) retains the content manually defined by human developers or AI agents. The script exclusively overwrites the commit history section located after a specific delimiter. If the description or overview is missing, AI agents must ask the user for permission before generating it, and they are allowed to write the description only after obtaining explicit approval.
 
 ### 3.1 Template Structure
 ```markdown
