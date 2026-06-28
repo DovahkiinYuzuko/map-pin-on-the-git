@@ -1,6 +1,6 @@
 ---
 name: map-pin-on-the-git
-description: Use this skill whenever writing a git commit message, executing a git commit, or managing git repository logs. It guides the agent to include structured reasons (Constraint, Rejected, Chosen).
+description: Use this skill automatically whenever the user asks to create or manage a git commit, execute git commit commands, modify git code repositories, or synchronize git logs and branch descriptions into markdown documentation. This skill must be triggered during any git lifecycle operations or branch management.
 ---
 
 # Map-Pin-On-The-Git
