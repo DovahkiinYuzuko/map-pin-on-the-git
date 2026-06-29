@@ -36,7 +36,7 @@ The file header (branch name and overview) retains the content manually defined 
 
 ### 4.2 Git Log Extraction and Structured Parsing
 - Executes the `git log` command internally to retrieve commit information in the following format:
-  `git log --format="%h|%ad|%s|%b" --date=format:"%Y-%m-%d %H:%M:%S"`
+  `git log --format="%h%x00%ad%x00%s%x00%b%x00___COMMIT_SEP___" --date=format:"%Y-%m-%d %H:%M:%S"`
 - Uses regular expressions to detect the following prefixes in the retrieved commit body (`%b`) and maps them to their respective fields:
   - `[Description]` or `Description:`
   - `[Reason: Constraint]` or `Constraint:`
