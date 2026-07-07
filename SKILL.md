@@ -1,6 +1,6 @@
 ---
 name: map-pin-on-the-git
-description: Use this skill automatically whenever the user asks to create or manage a git commit, execute git commit commands, modify git code repositories, or synchronize git logs and branch descriptions into markdown documentation. This skill must be triggered during any git lifecycle operations or branch management.
+description: Use this skill automatically and without exception whenever a git commit is being created or managed, including both direct user requests and automated commits triggered by development workflows or rules. It must be executed during any git lifecycle operations, git commit command execution, repository modifications, or when synchronizing git logs and branch descriptions into markdown documentation. Never skip this skill for any commit-related action.
 ---
 
 # Map-Pin-On-The-Git
