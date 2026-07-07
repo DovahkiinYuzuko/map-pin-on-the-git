@@ -13,7 +13,7 @@ Maintain the Git commit history as the Single Source of Truth (SSOT) and execute
 - Analyze the staged changes to understand the technical impact.
 - Formulate a structured commit message including `Constraint:`, `Rejected:`, and `Chosen:` prefixes, then execute the git commit.
 - After committing, ensure to run the following command to synchronize the document:
-  - Command: `node scripts/sync-git-log.js`
+  - Command: `node PATH/to/sync-git-log.js`
 - Verify that the latest log is correctly reflected in `docs/git-descriptions/[branch-name].md` under the `--- START GIT LOG ---` delimiter.
 
 ## Constraints
